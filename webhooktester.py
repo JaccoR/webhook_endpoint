@@ -6,7 +6,7 @@ url = "http://localhost:5000/webhook"
 
 # JSON data to be sent in the request body
 data = {
-    "message": "Hello, World!",
+    "message": "Helo, World!",
     "timestamp": "2023-03-21T12:00:00Z",
     "userinputid": "tst"
 }
