@@ -37,6 +37,7 @@ def connect_to_mongodb():
 def get_collection(data):
     # Check for a similar key between the COLLECTION_MAP and the data and use this to identify the correct collection
     # Find the first common key
+    common_key = None
     for key in COLLECTION_MAP.keys():
         if key in data:
             common_key = key
