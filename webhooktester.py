@@ -8,7 +8,7 @@ url = "http://localhost:5000/webhook"
 data = {
     "message": "Helo, World!",
     "timestamp": "2023-03-21T12:00:00Z",
-    "userinputid": "tst"
+    "userinputd": "tst"
 }
 
 # Convert the data to JSON format

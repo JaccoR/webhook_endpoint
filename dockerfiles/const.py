@@ -12,3 +12,9 @@ HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_UNAUTHORIZED = 401
 HTTP_INTERNAL_SERVER_ERROR = 500
+
+# Map userinputid and longshipid to corresponding collections used to put the data in the correct collection
+COLLECTION_MAP = {
+    'userinputid': USER_INPUT_COLLECTION,
+    'longshipid': LONGSHIP_COLLECTION
+}
