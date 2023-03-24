@@ -8,7 +8,7 @@ url = "http://localhost:5000/webhook"
 data = {
     "message": "Helo, World!",
     "timestamp": "2023-03-21T12:00:00Z",
-    "userinputd": "tst"
+    "userinputid": "tst"
 }
 
 # Convert the data to JSON format
@@ -17,7 +17,7 @@ json_data = json.dumps(data)
 # Set the headers for the request
 headers = {
     "Content-Type": "application/json",
-    "authentication": "test"
+    "authentication": "tet"
 }
 
 # Send the POST request

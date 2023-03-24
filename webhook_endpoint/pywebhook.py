@@ -1,6 +1,8 @@
 import logging
 from flask import Flask, request
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
+import threading
 
 # Import variables from const.py
 from const import MONGODB_URL, AUTH_KEY, DB_NAME, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR, HTTP_OK, HTTP_UNAUTHORIZED, COLLECTION_MAP
@@ -8,8 +10,11 @@ from const import MONGODB_URL, AUTH_KEY, DB_NAME, HTTP_BAD_REQUEST, HTTP_INTERNA
 # Init Flask app
 app = Flask(__name__)
 
-mongo_client = MongoClient(MONGODB_URL)
-db = mongo_client[DB_NAME]
+# Initialize database variables
+mongo_client = None
+db = None
+# Create a lock object
+mongo_lock = threading.Lock()
 
 # Set up logging
 app.logger.setLevel(logging.INFO)
@@ -26,11 +31,13 @@ def check_environment_variables():
 
 def connect_to_mongodb():
     # Test connection with MongoDB
+    global mongo_client, db
     try:
+        mongo_client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000, maxPoolSize=50)
         mongo_client.server_info()
+        db = mongo_client[DB_NAME]
         app.logger.info(f'Connected with MongoDB')
-        
-    except Exception as e:
+    except ServerSelectionTimeoutError as e:
         app.logger.error(f"Error connecting to MongoDB: {e}")
         exit(1)
 
@@ -38,7 +45,8 @@ def get_collection(data):
     # Check for a similar key between the COLLECTION_MAP and the data and use this to identify the correct collection
     # Find the first common key
     common_key = None
-    for key in COLLECTION_MAP.keys():
+    collection_map_keys = COLLECTION_MAP.keys()
+    for key in collection_map_keys:
         if key in data:
             common_key = key
             break
@@ -48,18 +56,24 @@ def get_collection(data):
         collection = COLLECTION_MAP.get(common_key)
         return collection
     else:
-        app.logger.warning(f"Received invalid data: {data}")
+        app.logger.warning(f"Data seems in a different format and does not contain fields: {collection_map_keys}, skipping")
         return None
     
 def put_data_in_mongodb(data, collection):
     # Try to put data in mongoDB
     try:
+        # Acquire the lock before accessing the database
+        mongo_lock.acquire()
+
         db[collection].insert_one(data)
         app.logger.info(f'Successfully inputted data into the {collection} collection')
         return True
     except Exception as e:
         app.logger.error(f"Error inserting data into MongoDB: {e}")
         return False
+    finally:
+        # Release the lock after accessing the database even when an exception is raised
+        mongo_lock.release()
     
 def parse_data(data):
     # Parse the JSON data from the request body and save to MongoDB
@@ -70,8 +84,11 @@ def parse_data(data):
         return None
 
 
-def validate_and_send_to_mongodb():
-    # Save data to the appropriate MongoDB collection
+def process_webhook_data():
+    # Authenticate the request
+    if not authenticate_request(request):
+        return 'Authentication failed', HTTP_UNAUTHORIZED
+    
     # Parse the JSON data
     data = parse_data(request)
 
@@ -106,12 +123,7 @@ def authenticate_request(request):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     # The webhook endpoint itself
-    # Authenticate the request
-    if not authenticate_request(request):
-        return 'Authentication failed', HTTP_UNAUTHORIZED
-
-    response, status_code = validate_and_send_to_mongodb()
-
+    response, status_code = process_webhook_data()
     return response, status_code
 
 
