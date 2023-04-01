@@ -17,7 +17,7 @@ json_data = json.dumps(data)
 # Set the headers for the request
 headers = {
     "Content-Type": "application/json",
-    "authentication": "tet"
+    "authentication": "test"
 }
 
 # Send the POST request

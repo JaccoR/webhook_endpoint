@@ -10,6 +10,6 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY . .    
 
 # Start the Flask app using Gunicorn
-CMD gunicorn --bind 0.0.0.0:5000 wsgi:app
+CMD gunicorn --bind 0.0.0.0:5000 wsgi:app -w 2
 
 

@@ -18,3 +18,6 @@ COLLECTION_MAP = {
     'userinputid': USER_INPUT_COLLECTION,
     'longshipid': LONGSHIP_COLLECTION
 }
+
+LOG_FORMAT = '[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s'
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S %z'
