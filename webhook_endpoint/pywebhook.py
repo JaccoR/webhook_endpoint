@@ -1,27 +1,21 @@
-import logging
-import os
+
 from flask import Flask, request
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
+
 import threading
 
 # Import variables from const.py
-from const import MONGODB_URL, AUTH_KEY, DB_NAME, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR, HTTP_OK, HTTP_UNAUTHORIZED, COLLECTION_MAP, LOG_FORMAT, DATE_FORMAT
+from const import AUTH_KEY, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR, HTTP_OK, HTTP_UNAUTHORIZED, COLLECTION_MAP
 
 # Init Flask app
 app = Flask(__name__)
 
-# Initialize global database variables
-mongo_client = None
-db = None
 # Create a lock object for thread-safety
 mongo_lock = threading.Lock()
 
-# Set up logging
-logging.basicConfig(format=LOG_FORMAT, datefmt=DATE_FORMAT, level=logging.INFO)
-
 @app.route('/webhook', methods=['POST'])
 def webhook_route():
+    # Take the database from flask app
+    db = app.config['db']
     # Authenticate the request
     if not authenticate_request(request):
         return 'Authentication failed', HTTP_UNAUTHORIZED
@@ -32,40 +26,22 @@ def webhook_route():
     except ValueError as e:
         app.logger.error(f"Error parsing data to JSON: {e}")
         return 'Invalid data', HTTP_BAD_REQUEST
+    
+    # If a certain key is in the data, present it via an api
+    if "key" in data:
+        # Present data in api endpoint
+        return 'OK', HTTP_OK
 
-    # Get the collection based on the data content
+    # Put data in mongoDB
     collection = get_collection(data)
 
     if collection is None:
         return 'Invalid data', HTTP_BAD_REQUEST
 
-    # Insert data into the MongoDB collection
-    if not put_data_in_mongodb(data, collection):
+    if not put_data_in_mongodb(db, data, collection):
         return 'Error', HTTP_INTERNAL_SERVER_ERROR
 
     return 'OK', HTTP_OK
-
-# Check if the required environment variables are set
-def check_environment_variables():
-    if not MONGODB_URL:
-        app.logger.error("MongoDB URL not set")
-        exit(1)
-
-    if not AUTH_KEY:
-        app.logger.error("Authentication key not set")
-        exit(1)
-
-# Connect to the MongoDB instance
-def connect_to_mongodb():
-    global mongo_client, db
-    try:
-        mongo_client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000, maxPoolSize=50)
-        mongo_client.server_info()
-        db = mongo_client[DB_NAME]
-        app.logger.info(f'Connected with MongoDB')
-    except ServerSelectionTimeoutError as e:
-        app.logger.error(f"Error connecting to MongoDB: {e}")
-        exit(1)
 
 # Get the corresponding MongoDB collection based on the data content
 def get_collection(data):
@@ -84,7 +60,7 @@ def get_collection(data):
         return None
 
 # Insert data into the MongoDB collection
-def put_data_in_mongodb(data, collection):
+def put_data_in_mongodb(db, data, collection):
     try:
         # Acquire the lock for thread-safety
         mongo_lock.acquire()

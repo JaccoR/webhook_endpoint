@@ -28,6 +28,7 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
       DB_NAME: Webhook
       AUTHENTICATION_KEY: test
+      CHARGEPOINT_IDS: NLCON-1, NLCON-2
     depends_on:
       - mongo
  

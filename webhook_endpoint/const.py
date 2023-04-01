@@ -6,6 +6,7 @@ AUTH_KEY = os.getenv("AUTHENTICATION_KEY", "test")
 DB_NAME = os.getenv("DB_NAME", "webhook_data")
 USER_INPUT_COLLECTION = os.getenv("USER_INPUT_COLLECTION", "user_input")
 LONGSHIP_COLLECTION = os.getenv("LONGSHIP_COLLECTION", "longshipid")
+CHARGEPOINT_IDS = os.getenv['CHARGEPOINT_IDS'].split(', ')
 
 # Define constants for HTTP status codes
 HTTP_OK = 200
