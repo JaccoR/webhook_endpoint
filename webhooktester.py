@@ -21,10 +21,11 @@ headers = {
 }
 
 # Send the POST request
-response = requests.post(url, data=json_data, headers=headers)
+while True:
+    response = requests.post(url, data=json_data, headers=headers)
 
-# Check the status code of the response
-if response.status_code == 200:
-    print("Webhook successfully sent!")
-else:
-    print("Failed to send webhook.")
+    # Check the status code of the response
+    if response.status_code == 200:
+        print("Webhook successfully sent!")
+    else:
+        print("Failed to send webhook.")

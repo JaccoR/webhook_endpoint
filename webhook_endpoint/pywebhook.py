@@ -11,10 +11,10 @@ from const import MONGODB_URL, AUTH_KEY, DB_NAME, HTTP_BAD_REQUEST, HTTP_INTERNA
 # Init Flask app
 app = Flask(__name__)
 
-# Initialize database variables
+# Initialize global database variables
 mongo_client = None
 db = None
-# Create a lock object
+# Create a lock object for thread-safety
 mongo_lock = threading.Lock()
 
 # Set up logging
@@ -33,16 +33,19 @@ def webhook_route():
         app.logger.error(f"Error parsing data to JSON: {e}")
         return 'Invalid data', HTTP_BAD_REQUEST
 
+    # Get the collection based on the data content
     collection = get_collection(data)
 
     if collection is None:
         return 'Invalid data', HTTP_BAD_REQUEST
 
+    # Insert data into the MongoDB collection
     if not put_data_in_mongodb(data, collection):
         return 'Error', HTTP_INTERNAL_SERVER_ERROR
 
     return 'OK', HTTP_OK
 
+# Check if the required environment variables are set
 def check_environment_variables():
     if not MONGODB_URL:
         app.logger.error("MongoDB URL not set")
@@ -52,6 +55,7 @@ def check_environment_variables():
         app.logger.error("Authentication key not set")
         exit(1)
 
+# Connect to the MongoDB instance
 def connect_to_mongodb():
     global mongo_client, db
     try:
@@ -63,6 +67,7 @@ def connect_to_mongodb():
         app.logger.error(f"Error connecting to MongoDB: {e}")
         exit(1)
 
+# Get the corresponding MongoDB collection based on the data content
 def get_collection(data):
     common_key = None
     collection_map_keys = COLLECTION_MAP.keys()
@@ -78,8 +83,10 @@ def get_collection(data):
         app.logger.warning(f"Data seems in a different format and does not contain fields: {collection_map_keys}, skipping")
         return None
 
+# Insert data into the MongoDB collection
 def put_data_in_mongodb(data, collection):
     try:
+        # Acquire the lock for thread-safety
         mongo_lock.acquire()
         db[collection].insert_one(data)
         app.logger.info(f'Successfully inputted data into the {collection} collection')
@@ -88,11 +95,14 @@ def put_data_in_mongodb(data, collection):
         app.logger.error(f"Error inserting data into MongoDB: {e}")
         return False
     finally:
+        # Release the lock after accessing the database
         mongo_lock.release()
 
+# Parse the JSON data from the request
 def parse_data(request):
     return request.get_json()
 
+# Authenticate the request based on the authentication key
 def authenticate_request(request):
     header_auth_key = request.headers.get('authentication')
     if header_auth_key != AUTH_KEY:
