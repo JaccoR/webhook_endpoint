@@ -1,16 +1,16 @@
 
 from flask import Flask, request
-
 import threading
-
-# Import variables from const.py
-from const import AUTH_KEY, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR, HTTP_OK, HTTP_UNAUTHORIZED, COLLECTION_MAP
+from const import AUTH_KEY, HTTP_BAD_REQUEST, HTTP_INTERNAL_SERVER_ERROR, HTTP_OK, HTTP_UNAUTHORIZED, COLLECTION_MAP, CHARGEPOINT_IDS
 
 # Init Flask app
 app = Flask(__name__)
 
 # Create a lock object for thread-safety
 mongo_lock = threading.Lock()
+
+# Dictionary containing data that needs to be presented in the api for different endpoints
+api_data = {}
 
 @app.route('/webhook', methods=['POST'])
 def webhook_route():
@@ -22,23 +22,29 @@ def webhook_route():
 
     try:
         # Parse the JSON data
-        data = parse_data(request)
+        webhook_data = parse_data(request)
     except ValueError as e:
         app.logger.error(f"Error parsing data to JSON: {e}")
         return 'Invalid data', HTTP_BAD_REQUEST
     
-    # If a certain key is in the data, present it via an api
-    if "key" in data:
-        # Present data in api endpoint
+    # If a certain key is in the data, present it via an API endpoint
+    if webhook_data["chargepoint_id"] in CHARGEPOINT_IDS:
+        chargepoint_collection = app.config['db']['chargepointstatus']
+        chargepoint_collection.update_one(
+            {'chargepoint_id': webhook_data["chargepoint_id"]},
+            {'$set': webhook_data},
+            upsert=True
+        )
+        app.logger.info(f'Updated MongoDB data for chargepoint_id: {webhook_data["chargepoint_id"]}')
         return 'OK', HTTP_OK
 
     # Put data in mongoDB
-    collection = get_collection(data)
+    collection = get_collection(webhook_data)
 
     if collection is None:
         return 'Invalid data', HTTP_BAD_REQUEST
 
-    if not put_data_in_mongodb(db, data, collection):
+    if not put_data_in_mongodb(db, webhook_data, collection):
         return 'Error', HTTP_INTERNAL_SERVER_ERROR
 
     return 'OK', HTTP_OK

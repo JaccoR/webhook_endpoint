@@ -6,13 +6,14 @@ AUTH_KEY = os.getenv("AUTHENTICATION_KEY", "test")
 DB_NAME = os.getenv("DB_NAME", "webhook_data")
 USER_INPUT_COLLECTION = os.getenv("USER_INPUT_COLLECTION", "user_input")
 LONGSHIP_COLLECTION = os.getenv("LONGSHIP_COLLECTION", "longshipid")
-CHARGEPOINT_IDS = os.getenv['CHARGEPOINT_IDS'].split(', ')
+CHARGEPOINT_IDS = os.getenv('CHARGEPOINT_IDS').split(', ')
 
 # Define constants for HTTP status codes
 HTTP_OK = 200
 HTTP_BAD_REQUEST = 400
 HTTP_UNAUTHORIZED = 401
 HTTP_INTERNAL_SERVER_ERROR = 500
+HTTP_NO_CONTENT = 204
 
 # Map userinputid and longshipid to corresponding collections used to put the data in the correct collection
 COLLECTION_MAP = {

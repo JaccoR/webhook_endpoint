@@ -20,6 +20,7 @@ def check_environment_variables():
         logging.error("No charegepoints set")
         exit(1)
 
+# Connect to MongoDB and test connection
 def connect_to_mongodb():
     try:
         mongo_client = MongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000, maxPoolSize=50)

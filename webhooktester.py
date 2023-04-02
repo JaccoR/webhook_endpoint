@@ -6,9 +6,10 @@ url = "http://localhost:5000/webhook"
 
 # JSON data to be sent in the request body
 data = {
-    "message": "Helo, World!",
+    "status": "unavailable",
     "timestamp": "2023-03-21T12:00:00Z",
-    "userinputid": "tst"
+    "userinputid": "tst",
+    "chargepoint_id": "NLCON-2"
 }
 
 # Convert the data to JSON format
@@ -21,11 +22,11 @@ headers = {
 }
 
 # Send the POST request
-while True:
-    response = requests.post(url, data=json_data, headers=headers)
+# while True:
+response = requests.post(url, data=json_data, headers=headers)
 
-    # Check the status code of the response
-    if response.status_code == 200:
-        print("Webhook successfully sent!")
-    else:
-        print("Failed to send webhook.")
+# Check the status code of the response
+if response.status_code == 200:
+    print("Webhook successfully sent!")
+else:
+    print("Failed to send webhook.")
