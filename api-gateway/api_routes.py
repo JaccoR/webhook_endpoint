@@ -15,15 +15,15 @@ def route_handler(chargepointid):
         chargepoint_collection = app.config['db'][LONGSHIP_SESSION_STATUS_COLLECTION]
         data = chargepoint_collection.find_one({'subject': chargepointid})
         if data:
-            app.logger.info(f'Data found for chargepointid: {chargepointid}')
+            app.logger.info(f'Data found for subject: {chargepointid}')
             json_data = json_util.dumps(data)  # Serialize the data using json_util.dumps()
             parsed_data = json.loads(json_data)  # Load the serialized data back into a Python dict
             return jsonify(parsed_data)
         else:
-            app.logger.warning(f'No data available for chargepointid: {chargepointid}')
+            app.logger.warning(f'No data available for subject: {chargepointid}')
             return jsonify({'message': f'No data available for {chargepointid}'}), HTTP_NO_CONTENT
     except Exception as e:
-        app.logger.error(f"Error processing request for chargepointid: {chargepointid}: {e}")
+        app.logger.error(f"Error processing request for subject: {chargepointid}: {e}")
         return jsonify({'message': 'An error occurred while processing your request.'}), HTTP_INTERNAL_SERVER_ERROR
 
     

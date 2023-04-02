@@ -73,13 +73,15 @@ def authenticate_request(request):
 
 def validate_data(webhook_data):
     if "specversion" not in webhook_data and "userinputid" not in webhook_data:
-        app.logger.warning("Invalid data: missing required keys")
+        app.logger.warning("Invalid data: missing key")
+        return False
+    if webhook_data["subject"] not in CHARGEPOINT_IDS:
+        app.logger.debug(f"Invalid data: subject '{webhook_data['subject']}' not in allowed chargepoint IDs")
         return False
     return True
 
-# Check if data should be presented in api
 def check_and_update_api_data(webhook_data):
-    if webhook_data["subject"] in CHARGEPOINT_IDS and webhook_data["type"] == "OperationalStatusChanged":
+    if "type" in webhook_data and webhook_data["type"] == "OperationalStatusChanged":
         app.logger.info(f"Received OperationalStatusChanged, processing...")
         try:
             # Acquire the lock for thread-safety using a context manager
@@ -96,11 +98,11 @@ def check_and_update_api_data(webhook_data):
             app.logger.error(f"Error updating data in MongoDB for API (chargepoint_id: {webhook_data['subject']}): {e}")
             return False
     app.logger.debug("Data not related to API")
-
     return False
 
+
 def check_longship_session(webhook_data, db):
-    if webhook_data["type"] in ["SessionUpdate", "SessionStop", "SessionStart"] and webhook_data["subject"] in CHARGEPOINT_IDS:
+    if "type" in webhook_data and webhook_data["type"] in ["SessionUpdate", "SessionStop", "SessionStart"]:
         app.logger.info(f"Received longship data valid for this location, processing...")
         if put_data_in_mongodb(db, webhook_data, LONGSHIP_SESSION_COLLECTION):
             return True
@@ -108,9 +110,7 @@ def check_longship_session(webhook_data, db):
     return False
 
 def check_user_input(webhook_data, db):
-    if webhook_data["userinputid"] in CHARGEPOINT_IDS:
-        app.logger.info(f"Received user input valid for this location, processing...")
-        if put_data_in_mongodb(db, webhook_data, USER_INPUT_COLLECTION):
-            return True
-    app.logger.debug("Data is not related to user input")
+    app.logger.info(f"Received user input valid for this location, processing...")
+    if put_data_in_mongodb(db, webhook_data, USER_INPUT_COLLECTION):
+        return True
     return False
